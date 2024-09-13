@@ -10,12 +10,16 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
+import com.roboticslib.motion.*;
 
 @Autonomous(name = "A_Auton")
 
 public class A_Auton extends LinearOpMode {
 
-    public BaseBot bot;
+    public MainBot bot;
+    public RobotDriveOdo od;
+    public MainPID pid;
+    public MecanumMotionController mmc;
     
     //settings
     boolean specimen = true;
@@ -39,9 +43,9 @@ public class A_Auton extends LinearOpMode {
     public void runOpMode() {
 //init
     //hardwaremaps and init methods
-        bot = new BaseBot();
-        bot.init(hardwareMap);
+        bot = new MainBot(hardwareMap);
         bot.setManualExposure(this, 2, 255);
+        od = new RobotDriveOdo();
         
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -90,18 +94,16 @@ public class A_Auton extends LinearOpMode {
         waitForStart();
 //start
     //adding all the movement paths
-    BaseBot.Pose[] preloadPath = new BaseBot.Pose[1];
+    
     // bot starts in tile F4 with a initial heading of 90 degrees
-    bot.setHeading(0);
-    bot.setFieldXY(0, 0);
+    od.setHeading(0);
+    od.setFieldXY(0, 0);
     
     //specimen
         if(specimen){
             //use preload
             if(specimenPreload){
-                preloadPath = new BaseBot.Pose[]{
-                    new BaseBot.Pose(0, 0, 0)
-                };
+                
             }else{
                 
             }
@@ -125,9 +127,7 @@ public class A_Auton extends LinearOpMode {
         
         
         
-        waitForSeconds(2);
-        followPath(preloadPath);
-        waitForSeconds(5);
+        
         
         
 //loop
@@ -137,7 +137,16 @@ public class A_Auton extends LinearOpMode {
             telemetry.update();
             List<AprilTagDetection> currentDetections = bot.aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
-                telemetry.addData("tag", bot.format(detection));
+                //set odomentry
+                double range = detection.ftcPose.range;
+                double bearing = detection.ftcPose.bearing;
+                double yaw = detection.ftcPose.yaw;
+                double tagx = detection.metadata.fieldPosition.get(0);
+                double tagy = detection.metadata.fieldPosition.get(1);
+                double theta = Math.toRadians(od.getHeading() + bearing);
+                double fx = tagx - Math.cos(theta) * range;
+                double fy = tagy - Math.sin(theta) * range;
+                od.setFieldXY(fx, fy);
             }
             
             
@@ -164,22 +173,6 @@ public class A_Auton extends LinearOpMode {
         }
     }
     
-    
-    public void followPath(BaseBot.Pose[] path){
-        int i = 0;
-        while (i<path.length){
-            if(!opModeIsActive()) return;
-            bot.updateTracking();
-            double dist = bot.driveToPose(path[i], .7);
-            telemetry.addData("path target", i);
-            telemetry.addData("target pose", path[i]);
-            telemetry.addData("field pose", bot.field);
-            telemetry.addData("dist", dist);
-            telemetry.update();
-            if(dist < 1.0) i++;
-        }
-        bot.driveXYW(0, 0, 0);
-    }
     
     public void lastButtons(){
         lastA = gamepad1.a;
