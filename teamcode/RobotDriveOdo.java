@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 import static org.firstinspires.ftc.teamcode.RobotValues.*;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.roboticslib.motion.*;
 
 public class RobotDriveOdo implements Odometry{
@@ -8,6 +9,10 @@ public class RobotDriveOdo implements Odometry{
     double fieldHeading;
     double fieldX;
     double fieldY;
+    
+    public RobotDriveOdo(MainBot b){
+        bot = b;
+    }
     
     @Override
     public double getX() {
@@ -38,13 +43,14 @@ public class RobotDriveOdo implements Odometry{
     
     
     public void updateTracking() {
+        
         double heading = bot.getHeading();
         
         // get current motor ticks
-        int lfTicks = bot.frontLeft.getCurrentPosition();
-        int rfTicks = bot.frontRight.getCurrentPosition();
-        int lbTicks = bot.backLeft.getCurrentPosition();
-        int rbTicks = bot.backRight.getCurrentPosition();
+        int lfTicks = bot.getFLPos();
+        int rfTicks = bot.getFRPos();
+        int lbTicks = bot.getBLPos();
+        int rbTicks = bot.getBRPos();
         
         // determine angular delta (rotations) for each motor
         double lfD = (lfTicks - bot.lfTicksPrev) / TICKS_PER_REVOLUTION;
@@ -83,6 +89,7 @@ public class RobotDriveOdo implements Odometry{
         double fdx = Math.cos(fw0) * pdx - Math.sin(fw0) * pdy;
         double fdy = Math.sin(fw0) * pdx + Math.cos(fw0) * pdy;
         double fdw = rdw;
+        
         
         // integrate into field coordinates
         fieldX += fdx;

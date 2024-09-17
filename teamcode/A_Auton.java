@@ -45,7 +45,30 @@ public class A_Auton extends LinearOpMode {
     //hardwaremaps and init methods
         bot = new MainBot(hardwareMap);
         bot.setManualExposure(this, 2, 255);
-        od = new RobotDriveOdo();
+        od = new RobotDriveOdo(bot);
+        
+        bot.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        bot.enableBrakeMode(false);
+        bot.reverseFL(false);
+        bot.reverseFR(false);
+        bot.reverseBL(false);
+        bot.reverseBR(false);
+        bot.resetEncoders();
+        
+        PIDController xPid = new PIDController(.15, .9, .01);//(.1,0.08,.01);
+        PIDController yPid = new PIDController(.17, .9, .01);//(.12,0.08,.01);
+
+        PIDController thetaPID = new PIDController(2,.9,0);
+        thetaPID.errorSumTotal = .1;
+        pid = new MainPID(bot, od);
+        
+        pid.setPID(xPid, yPid);
+        pid.setTurnPID(thetaPID);
+        pid.maxAngSpeed = .7;
+        pid.maxSpeed = .85;
+        
+        mmc = new MecanumMotionController(pid);
+        
         
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -96,8 +119,12 @@ public class A_Auton extends LinearOpMode {
     //adding all the movement paths
     
     // bot starts in tile F4 with a initial heading of 90 degrees
-    od.setHeading(0);
+    bot.setHeading(0);
     od.setFieldXY(0, 0);
+    
+    mmc.moveTo(0, 0, 20);
+    mmc.waitForSeconds(10);
+    mmc.start();
     
     //specimen
         if(specimen){
@@ -133,23 +160,39 @@ public class A_Auton extends LinearOpMode {
 //loop
     //repeating while active
         while (opModeIsActive()) {
+            bot.updateEncoders();
+            od.updateTracking();
+            mmc.update();
+            
+            
             telemetry.addData("Status", "Running");
+            telemetry.addData("position x", od.getX());
+            telemetry.addData("position y", od.getY());
+            telemetry.addData("heading", bot.getHeading());
+            telemetry.addData("odo heading", od.getHeading());
+            telemetry.addData("FL", bot.getFLPos());
+            telemetry.addData("FR", bot.getFRPos());
+            telemetry.addData("BL", bot.getBLPos());
+            telemetry.addData("BR", bot.getBRPos());
             telemetry.update();
-            List<AprilTagDetection> currentDetections = bot.aprilTag.getDetections();
-            for (AprilTagDetection detection : currentDetections) {
-                //set odomentry
-                double range = detection.ftcPose.range;
-                double bearing = detection.ftcPose.bearing;
-                double yaw = detection.ftcPose.yaw;
-                double tagx = detection.metadata.fieldPosition.get(0);
-                double tagy = detection.metadata.fieldPosition.get(1);
-                double theta = Math.toRadians(od.getHeading() + bearing);
-                double fx = tagx - Math.cos(theta) * range;
-                double fy = tagy - Math.sin(theta) * range;
-                od.setFieldXY(fx, fy);
+            try{
+                List<AprilTagDetection> currentDetections = bot.aprilTag.getDetections();
+                for (AprilTagDetection detection : currentDetections) {
+                    //set odomentry
+                    double range = detection.ftcPose.range;
+                    double bearing = detection.ftcPose.bearing;
+                    double yaw = detection.ftcPose.yaw;
+                    double tagx = detection.metadata.fieldPosition.get(0);
+                    double tagy = detection.metadata.fieldPosition.get(1);
+                    double theta = Math.toRadians(od.getHeading() + bearing);
+                    double fx = tagx - Math.cos(theta) * range;
+                    double fy = tagy - Math.sin(theta) * range;
+                    od.setFieldXY(fx, fy);
+                }
             }
-            
-            
+            catch( Exception e){
+                
+            }
         }
     }
     
