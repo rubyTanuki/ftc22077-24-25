@@ -115,7 +115,7 @@ public class MecanumMotionController {
 
             @Override
             void start(){
-                pid.moveTo(lastX,lastY,lastAngle);
+                //pid.moveTo(lastX,lastY,lastAngle);
                 timer = new ElapsedTime();
             }
             @Override
