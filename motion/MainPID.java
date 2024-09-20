@@ -13,9 +13,12 @@ public class MainPID {
     public PIDController yPID;
     public PIDController thetaPID;
 
-    double targetX = 0;
-    double targetY = 0;
-    double targetAngle = 0;
+    public double targetX = 0;
+    public double targetY = 0;
+    public double targetAngle = 0; //radians
+    
+    public double maxAngSpeed = .8;
+    public double maxSpeed = .9;
     
     public RobotDriveOdo odo = null;
     ElapsedTime timer = null;
@@ -40,22 +43,23 @@ public class MainPID {
         yPID.start();
         thetaPID.setTarget(0);
     }
-    public double maxAngSpeed = 1;
-    public double maxSpeed = 1;
-    public void update(){
+    
+    public double update(){
         double curX = odo.getX();
         double curY = odo.getY();
-        double botHeading = odo.getHeading();
+        double botHeading = -Math.toRadians(odo.getHeading()); //radian
         
         double xVal = xPID.update(curX);
         double yVal = yPID.update(curY);
 
+        targetY = yPID.targetVal;
 
         double inputTheta = Math.atan2(yVal, xVal);
         double inputPower = Range.clip(Math.sqrt(Math.abs(xVal * xVal + yVal * yVal)), -1, 1);
-        double inputTurn = Mathf.angleWrap(targetAngle - botHeading);
-        if(Math.abs(inputTurn) > Math.toRadians(1)){
-            inputTurn = -thetaPID.update(inputTurn);
+        //double inputTurn = Mathf.angleWrap(targetAngle - botHeading);
+        double inputTurn = -Mathf.angleWrap(targetAngle - botHeading);
+        if(Math.abs(inputTurn) > Math.toRadians(2)){
+            inputTurn = thetaPID.update(inputTurn);
             inputTurn = Range.clip(inputTurn, -maxAngSpeed, maxAngSpeed);
         }
         else{
@@ -80,11 +84,24 @@ public class MainPID {
         mc.getFR().setPower(frontRight / max);
         mc.getBL().setPower(backLeft / max);
         mc.getBR().setPower(backRight / max);
+        return max;
+        
+        
     }
     
     public void moveTo(double x, double y, double angle){
         xPID.setTarget(x);
         yPID.setTarget(y);
-        targetAngle = Math.toRadians(angle);
+        targetAngle = -Math.toRadians(angle);
+    }
+    
+    public double getTargetX(){
+        return targetX;
+    }
+    public double getTargetY(){
+        return targetY;
+    }
+    public double getTargetAngle(){
+        return targetAngle;
     }
 }

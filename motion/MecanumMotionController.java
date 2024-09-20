@@ -38,20 +38,24 @@ public class MecanumMotionController {
     public double lastY = 0;
     public double lastAngle = 0;
     
+    public void setLastPos(double x, double y, double theta){
+        lastX = x; lastY = y; lastAngle = theta;
+    }
+    
     public void moveTo(double x, double y, double theta){
         
         actions.add(new MecanumAction(){
             double tx = x;
             double ty = y;
-            double tAngle = Math.toRadians(theta);
+            double tAngle = theta;
 
 
             ElapsedTime timer;
-            double seconds = 3;
+            double seconds = 1;
         
             @Override
             void start(){
-                pid.moveTo(x,y,theta);
+                pid.moveTo(tx,ty,tAngle);
                 lastX = x;
                 lastY = y;
                 lastAngle = theta;
@@ -66,7 +70,7 @@ public class MecanumMotionController {
                 deltaAngle = Mathf.angleWrap(deltaAngle);
                 double dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                if(timer.seconds() > seconds || dist < 2 && Math.abs(deltaAngle) < Math.toRadians(2)){
+                if(timer.seconds() > seconds || dist < 5 && Math.abs(deltaAngle) < Math.toRadians(5)){
                     nextState();
                 }
                 
@@ -79,7 +83,7 @@ public class MecanumMotionController {
         actions.add(new MecanumAction(){
             double tx = x;
             double ty = y;
-            double tAngle = Math.toRadians(theta);
+            double tAngle = theta;
 
 
             ElapsedTime timer;
@@ -115,7 +119,7 @@ public class MecanumMotionController {
 
             @Override
             void start(){
-                //pid.moveTo(lastX,lastY,lastAngle);
+                pid.moveTo(lastX,lastY,lastAngle);
                 timer = new ElapsedTime();
             }
             @Override

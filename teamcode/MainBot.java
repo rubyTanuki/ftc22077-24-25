@@ -75,7 +75,7 @@ public class MainBot extends MecanumChassis{
     }
     
     public double getHeading() {
-        return AngleUnit.normalizeDegrees(headingOffset + getIMUHeading());
+        return -AngleUnit.normalizeDegrees(headingOffset + getIMUHeading());
     }
     
     public boolean setManualExposure(LinearOpMode op,
@@ -105,4 +105,37 @@ public class MainBot extends MecanumChassis{
         }
         return (false);
     }
+    public int getLfTicksPrev(){
+        return lfTicksPrev;
+    }
+    public int getRfTicksPrev(){
+        return rfTicksPrev;
+    }
+    public int getRbTicksPrev(){
+        return rbTicksPrev;
+    }
+    public int getLbTicksPrev(){
+        return lbTicksPrev;
+    }
+    public double getHeadingPrev(){
+        return headingPrev;
+    }
+    
+    public void setLfTicksPrev(int tick){
+        lfTicksPrev = tick;
+    }
+    public void setRfTicksPrev(int tick){
+        rfTicksPrev = tick;
+    }
+    public void setRbTicksPrev(int tick){
+        rbTicksPrev = tick;
+    }
+    public void setLbTicksPrev(int tick){
+        lbTicksPrev = tick;
+    }
+    
+    public void setHeadingPrev(double deg){
+        headingPrev = deg;
+    }
 }
+

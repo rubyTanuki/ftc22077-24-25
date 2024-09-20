@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import static org.firstinspires.ftc.teamcode.RobotValues.*;
 
 public class MecanumChassis {
 
@@ -19,6 +20,8 @@ public class MecanumChassis {
                 frontRight = hm.get(DcMotorEx.class, "frontRight");
                 backLeft = hm.get(DcMotorEx.class, "backLeft");
                 backRight = hm.get(DcMotorEx.class, "backRight");
+                setDirections();
+                resetEncoders();
 
         }
         
@@ -27,7 +30,6 @@ public class MecanumChassis {
                 frontRight = (DcMotorEx)fr;
                 backLeft = (DcMotorEx)bl;
                 backRight = (DcMotorEx)br;
-                
         }
 
         int frontLeftPos;
@@ -82,6 +84,13 @@ public class MecanumChassis {
                 frontRight.setMode(mode);
                 backLeft.setMode(mode);
                 backRight.setMode(mode);
+        }
+        
+        public void setDirections(){
+                frontLeft.setDirection(LEFTDIR);
+                frontRight.setDirection(RIGHTDIR);
+                backLeft.setDirection(LEFTDIR);
+                backRight.setDirection(RIGHTDIR);
         }
 
         public void reverseFL(boolean reversed){

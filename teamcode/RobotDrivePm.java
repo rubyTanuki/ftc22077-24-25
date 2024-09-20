@@ -28,10 +28,10 @@ public class RobotDrivePm {
     double headingPrev = 0;
     
     public void init(HardwareMap hardwareMap) {
-        lf = initDcMotor(hardwareMap, "fl", LEFTDIR);
-        rf = initDcMotor(hardwareMap, "fr", RIGHTDIR);
-        lb = initDcMotor(hardwareMap, "bl", LEFTDIR);
-        rb = initDcMotor(hardwareMap, "br", RIGHTDIR);
+        lf = initDcMotor(hardwareMap, "frontLeft", LEFTDIR);
+        rf = initDcMotor(hardwareMap, "frontRight", RIGHTDIR);
+        lb = initDcMotor(hardwareMap, "backLeft", LEFTDIR);
+        rb = initDcMotor(hardwareMap, "backRight", RIGHTDIR);
         initIMU(hardwareMap);
         setFieldXY(0,0);
     }

@@ -9,7 +9,7 @@ public class PIDController {
     final double kD;
     public double iLimit = 1;
 
-    double targetVal = 0;
+    public double targetVal = 0;
     
     double errorSum = 0;
     public double errorSumTotal = .1;
@@ -64,6 +64,7 @@ public class PIDController {
     public void setILimit(double limit){
         iLimit = limit;
     }
+    
 
 }
 

@@ -48,24 +48,20 @@ public class A_Auton extends LinearOpMode {
         od = new RobotDriveOdo(bot);
         
         bot.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        bot.enableBrakeMode(false);
-        bot.reverseFL(false);
-        bot.reverseFR(false);
-        bot.reverseBL(false);
-        bot.reverseBR(false);
-        bot.resetEncoders();
+        bot.enableBrakeMode(true);
         
-        PIDController xPid = new PIDController(.15, .9, .01);//(.1,0.08,.01);
-        PIDController yPid = new PIDController(.17, .9, .01);//(.12,0.08,.01);
+        
+        PIDController xPid = new PIDController(.1, .08, .01);//(.1,0.08,.01);
+        PIDController yPid = new PIDController(.12, .08, .01);//(.12,0.08,.01);
 
-        PIDController thetaPID = new PIDController(2,.9,0);
+        PIDController thetaPID = new PIDController(2,0.98,.08);
         thetaPID.errorSumTotal = .1;
         pid = new MainPID(bot, od);
         
         pid.setPID(xPid, yPid);
         pid.setTurnPID(thetaPID);
-        pid.maxAngSpeed = .7;
-        pid.maxSpeed = .85;
+        pid.maxAngSpeed = .75;
+        pid.maxSpeed = .9;
         
         mmc = new MecanumMotionController(pid);
         
@@ -75,7 +71,7 @@ public class A_Auton extends LinearOpMode {
         
 //init_loop
     //choosing settings with controller
-        
+        /*
         int minSelector = 1;
         int maxSelector = 4;
         int selector = minSelector;
@@ -113,7 +109,9 @@ public class A_Auton extends LinearOpMode {
             telemetry.addLine((selector==3?">":" ") + "CYCLE COUNT = " + cycles);
             telemetry.addLine((selector==4?">":" ") + "DELAY SECONDS = " + delay);
             telemetry.update();
+            
         }
+        */
         waitForStart();
 //start
     //adding all the movement paths
@@ -121,9 +119,19 @@ public class A_Auton extends LinearOpMode {
     // bot starts in tile F4 with a initial heading of 90 degrees
     bot.setHeading(0);
     od.setFieldXY(0, 0);
+    mmc.setLastPos(0, 0, 0);
     
-    mmc.moveTo(0, 0, 20);
-    mmc.waitForSeconds(10);
+    mmc.moveTo(20, 0, 90);
+    mmc.waitForSeconds(1);
+    mmc.moveTo(-10, -25, 45);
+    mmc.moveTo(0, -50, -90);
+    mmc.moveTo(0, -80, -90);
+    
+    //mmc.waitForSeconds(0, () -> armMoveTo(10));
+    
+    
+    //mmc.moveTo(0, 0, 0);
+    
     mmc.start();
     
     //specimen
@@ -162,12 +170,16 @@ public class A_Auton extends LinearOpMode {
         while (opModeIsActive()) {
             bot.updateEncoders();
             od.updateTracking();
+            //pid.update();
             mmc.update();
             
             
             telemetry.addData("Status", "Running");
             telemetry.addData("position x", od.getX());
             telemetry.addData("position y", od.getY());
+            telemetry.addData("target x", pid.targetX);
+            telemetry.addData("target y", pid.targetY);
+            telemetry.addData("target angle", pid.getTargetAngle());
             telemetry.addData("heading", bot.getHeading());
             telemetry.addData("odo heading", od.getHeading());
             telemetry.addData("FL", bot.getFLPos());
@@ -175,6 +187,7 @@ public class A_Auton extends LinearOpMode {
             telemetry.addData("BL", bot.getBLPos());
             telemetry.addData("BR", bot.getBRPos());
             telemetry.update();
+            
             try{
                 List<AprilTagDetection> currentDetections = bot.aprilTag.getDetections();
                 for (AprilTagDetection detection : currentDetections) {
@@ -193,6 +206,7 @@ public class A_Auton extends LinearOpMode {
             catch( Exception e){
                 
             }
+            
         }
     }
     
