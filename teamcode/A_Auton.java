@@ -10,15 +10,16 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
-import com.roboticslib.motion.*;
+import Main.*;
+import Main.auton.*;
 
 @Autonomous(name = "A_Auton")
 
 public class A_Auton extends LinearOpMode {
 
-    public MainBot bot;
-    public RobotDriveOdo od;
-    public MainPID pid;
+    public AutoBot bot;
+    public BotOdometry od;
+    public PIDController pid;
     public MecanumMotionController mmc;
     
     //settings
@@ -43,27 +44,29 @@ public class A_Auton extends LinearOpMode {
     public void runOpMode() {
 //init
     //hardwaremaps and init methods
-        bot = new MainBot(hardwareMap);
+        bot = new AutoBot(hardwareMap);
         bot.setManualExposure(this, 2, 255);
-        od = new RobotDriveOdo(bot);
+        od = new BotOdometry(bot);
         
         bot.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         bot.enableBrakeMode(true);
         
+        bot.setArmMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         
-        PIDController xPid = new PIDController(.1, .08, .01);//(.1,0.08,.01);
-        PIDController yPid = new PIDController(.12, .08, .01);//(.12,0.08,.01);
+        
+        PID xPid = new PID(.07, .07, .01);//(.1,0.08,.01);
+        PID yPid = new PID(.12, .08, .01);//(.12,0.08,.01);
 
-        PIDController thetaPID = new PIDController(2,0.98,.08);
+        PID thetaPID = new PID(1,0.98,.08);//(2, 0.98, 0.08)
         thetaPID.errorSumTotal = .1;
-        pid = new MainPID(bot, od);
+        pid = new PIDController(bot, od);
         
         pid.setPID(xPid, yPid);
         pid.setTurnPID(thetaPID);
-        pid.maxAngSpeed = .75;
-        pid.maxSpeed = .9;
+        pid.maxAngSpeed = .9;
+        pid.maxSpeed = 1;
         
-        mmc = new MecanumMotionController(pid);
+        mmc = new MecanumMotionController(pid, bot);
         
         
         telemetry.addData("Status", "Initialized");
@@ -117,43 +120,64 @@ public class A_Auton extends LinearOpMode {
     //adding all the movement paths
     
     // bot starts in tile F4 with a initial heading of 90 degrees
-    bot.setHeading(0);
-    od.setFieldXY(0, 0);
-    mmc.setLastPos(0, 0, 0);
+    bot.imu.resetYaw();
+    od.setFieldXY(-12, -65);
+    mmc.setLastPos(-12, -65, 0);
     
-    mmc.moveTo(20, 0, 90);
+    //mmc.moveTo(30, 45, 90);
+    //mmc.waitForSeconds(3, () -> bot.setArm(1100, 0));
+    //mmc.waitForSeconds(3, () -> bot.setArm(1100, 500));
+    
+    mmc.waitForSeconds(0, () -> bot.setArm(2000, 0));
+    mmc.moveTo(-5, -55.5, -90);
+    //set wrist
+    mmc.moveArmTo(2000, 200);
+    //release claw
+    mmc.moveTo(-5, -59, -90, () -> bot.setArm(1900, 20));
+    //adjust wrist
+    mmc.moveArmTo(0, 100);
+    mmc.moveTo(-31, -59, -90); //going to pick up first sample
     mmc.waitForSeconds(1);
-    mmc.moveTo(-10, -25, 45);
-    mmc.moveTo(0, -50, -90);
-    mmc.moveTo(0, -80, -90);
+    mmc.moveTo(-31, -55, -90); //going forward to grab
+    mmc.waitForSeconds(1);
+    //grab
+    mmc.moveArmTo(2750, 1700); //moving arm up for outtake
+    mmc.moveTo(-31.5, -62, 135); //moving to outtake
+    mmc.waitForSeconds(1);
+    mmc.moveArmTo(3000, 50); //moving arm back to take second specimen
+    mmc.waitForSeconds(0, () -> mmc.moveArmTo(0, 100));
+    mmc.moveTo(-35, -59, -90);
     
-    //mmc.waitForSeconds(0, () -> armMoveTo(10));
     
     
-    //mmc.moveTo(0, 0, 0);
     
-    mmc.start();
     
-    //specimen
-        if(specimen){
-            //use preload
-            if(specimenPreload){
+    // //specimen
+    //     if(specimen){
+    //         //use preload
+    //         if(specimenPreload){
+    //             mmc.moveTo(0, 35, 90);
+    //             mmc.waitForSeconds(2);
+    //             //put on bar
+    //         }else{
                 
-            }else{
-                
-            }
-            //cycle
+    //         }
+    //         //cycle
+    //         mmc.moveTo(60, 45, 90);
+    //         mmc.waitForSeconds(2);
+    //         mmc.moveTo(60, 55, -45);
+    //         mmc.waitForSeconds(2);
             
             
             
-    //bucket
-        }else{
-            //use preload
+    // //bucket
+    //     }else{
+    //         //use preload
             
-            //cycle
+    //         //cycle
             
             
-        }
+    //     }
     
     
     
@@ -163,7 +187,7 @@ public class A_Auton extends LinearOpMode {
         
         
         
-        
+        mmc.start();
         
 //loop
     //repeating while active
