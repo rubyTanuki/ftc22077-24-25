@@ -1,6 +1,9 @@
 package Main;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.State;
 import Main.util.Mathf;
 import Main.statemachine.*;
@@ -15,13 +18,15 @@ public class MecanumMotionController {
     
     PIDController pid = null;
     AutoBot bot = null;
+    TeleMachine tm = null;
     ArrayList<MecanumAction> actions = new ArrayList<MecanumAction>();
     public SimpleState parallel;
     int current = 0;
     
-    public MecanumMotionController(PIDController pid, AutoBot bot){
+    public MecanumMotionController(PIDController pid, AutoBot bot, TeleMachine tm){
         this.pid = pid;
         this.bot = bot;
+        this.tm = tm;
     }
     
     public void start()
@@ -47,64 +52,50 @@ public class MecanumMotionController {
         lastX = x; lastY = y; lastAngle = theta;
     }
     
-    public void moveArmTo(int armPos, int slidePos){
+    
+    
+    public void alignToSample(int id, double timeout){
         
         actions.add(new MecanumAction(){
-            int aPos = armPos;
-            int sPos = slidePos;
-           
             ElapsedTime timer;
-            double seconds = 5;
-            @Override
+            int sampleX;
+            double yPow;
+            double thetaPow;
+            
+            @Override 
             void start(){
-                pid.moveTo(lastX,lastY,lastAngle);
                 timer = new ElapsedTime();
             }
             
-            @Override
+            @Override 
             void update(){
-                pid.update();
-                bot.setArm(aPos, sPos);
                 
-                boolean done = true;
-                if(Math.abs(bot.getArm().getCurrentPosition() - aPos) > 10){
-                    done = false;
-                }
-                if(Math.abs(bot.getSlide().getCurrentPosition()-sPos) > 10){
-                    done = false;
-                }
+                sampleX = bot.getSampleX(id);
                 
-                if(done || timer.seconds() > seconds) nextState();
-            }
-        });
-    }
-    public void moveArmTo(int armPos, int slidePos, double seconds){
-        
-        actions.add(new MecanumAction(){
-            int aPos = armPos;
-            int sPos = slidePos;
-           
-            ElapsedTime timer;
-            @Override
-            void start(){
-                pid.moveTo(lastX,lastY,lastAngle);
-                timer = new ElapsedTime();
-            }
-            
-            @Override
-            void update(){
-                pid.update();
-                bot.setArm(aPos, sPos);
+                if(lastAngle<-pid.odo.getHeading()) thetaPow = .08;
+                else thetaPow = -.08;
                 
-                boolean done = true;
-                if(Math.abs(bot.getArm().getCurrentPosition() - aPos) > 10){
-                    done = false;
+                if(sampleX>180){
+                    //move right
+                    yPow = -.2;
                 }
-                if(Math.abs(bot.getSlide().getCurrentPosition()-sPos) > 10){
-                    done = false;
+                else{
+                    //move left 
+                    yPow = .2;
                 }
                 
-                if(done || timer.seconds() > seconds) nextState();
+                bot.driveXYW(0, yPow, thetaPow);
+                
+                if(Math.abs(180-sampleX)<15 || timer.seconds()>timeout){
+                    bot.driveXYW(0, 0, 0);
+                    Pose2D curPos = pid.odo.getPosition();
+                    lastX = curPos.getX(DistanceUnit.INCH);
+                    lastY = curPos.getY(DistanceUnit.INCH);
+                    lastAngle = -curPos.getHeading(AngleUnit.DEGREES);
+                    nextState();
+                } 
+                
+                
             }
         });
     }
@@ -117,26 +108,30 @@ public class MecanumMotionController {
 
 
             ElapsedTime timer;
-            double seconds = 1;
+            double seconds = 4;
             
             @Override
             void start(){
+                if(tx == 999) tx = lastX;
+                if(ty == 999) ty = lastY;
+                if(tAngle == 999) tAngle = lastAngle;
                 pid.moveTo(tx,ty,tAngle);
-                lastX = x;
-                lastY = y;
-                lastAngle = theta;
+                lastX = tx;
+                lastY = ty;
+                lastAngle = tAngle;
                 timer = new ElapsedTime();
             }
             @Override
             void update(){
                 pid.update();
-                double deltaX = tx - pid.odo.getX();
-                double deltaY = ty - pid.odo.getY();
-                double deltaAngle = tAngle - pid.odo.getHeading();
+                Pose2D curPos = pid.odo.getPosition();
+                double deltaX = tx - curPos.getX(DistanceUnit.INCH);
+                double deltaY = ty - curPos.getY(DistanceUnit.INCH);
+                double deltaAngle = tAngle + curPos.getHeading(AngleUnit.DEGREES);
                 deltaAngle = Mathf.angleWrap(deltaAngle);
                 double dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                if(timer.seconds() > seconds || dist < 1 && Math.abs(deltaAngle) < Math.toRadians(2)){
+                if(dist < 2 && Math.abs(deltaAngle) < 3){
                     nextState();
                 }
                 
@@ -152,7 +147,7 @@ public class MecanumMotionController {
 
 
             ElapsedTime timer;
-            double seconds = 1;
+            double seconds = 2;
             
             @Override
             void start(){
@@ -166,12 +161,12 @@ public class MecanumMotionController {
             @Override
             void update(){
                 pid.update();
-                double deltaX = tx - pid.odo.getX();
-                double deltaY = ty - pid.odo.getY();
-                double deltaAngle = tAngle - pid.odo.getHeading();
+                Pose2D curPos = pid.odo.getPosition();
+                double deltaX = tx - curPos.getX(DistanceUnit.INCH);
+                double deltaY = ty - curPos.getY(DistanceUnit.INCH);
+                double deltaAngle = tAngle + curPos.getHeading(AngleUnit.DEGREES);
                 deltaAngle = Mathf.angleWrap(deltaAngle);
                 double dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                
                 if(timer.seconds() > seconds || dist < 1 && Math.abs(deltaAngle) < Math.toRadians(2)){
                     nextState();
                 }
@@ -201,9 +196,10 @@ public class MecanumMotionController {
             @Override
             void update(){
                 pid.update();
-                double deltaX = tx - pid.odo.getX();
-                double deltaY = ty - pid.odo.getY();
-                double deltaAngle = tAngle - pid.odo.getHeading();
+                Pose2D curPos = pid.odo.getPosition();
+                double deltaX = tx - curPos.getX(DistanceUnit.INCH);
+                double deltaY = ty - curPos.getY(DistanceUnit.INCH);
+                double deltaAngle = tAngle + curPos.getHeading(AngleUnit.DEGREES);
                 deltaAngle = Mathf.angleWrap(deltaAngle);
                 double dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 

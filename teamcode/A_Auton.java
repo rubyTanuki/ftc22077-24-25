@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -18,13 +21,14 @@ import Main.auton.*;
 public class A_Auton extends LinearOpMode {
 
     public AutoBot bot;
-    public BotOdometry od;
+    public GoBildaPinpointDriver odo;
     public PIDController pid;
     public MecanumMotionController mmc;
+    public TeleMachine tm;
     
     //settings
-    boolean specimen = true;
-    boolean specimenPreload = true;
+    boolean specimen = false;
+    boolean specimenPreload = false;
     int cycles = 0;
     int delay = 0;
     
@@ -45,8 +49,14 @@ public class A_Auton extends LinearOpMode {
 //init
     //hardwaremaps and init methods
         bot = new AutoBot(hardwareMap);
-        bot.setManualExposure(this, 2, 255);
-        od = new BotOdometry(bot);
+        //bot.setManualExposure(this, 2, 255);
+        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        odo.setOffsets(96.0, -75.0);
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.resetPosAndIMU();
+        
+        tm = new TeleMachine(bot);
         
         bot.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         bot.enableBrakeMode(true);
@@ -54,19 +64,20 @@ public class A_Auton extends LinearOpMode {
         bot.setArmMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         
         
-        PID xPid = new PID(.07, .07, .01);//(.1,0.08,.01);
-        PID yPid = new PID(.12, .08, .01);//(.12,0.08,.01);
+        PID xPid = new PID(.12, .08, .02);//(.1,0.08,.01);
+        PID yPid = new PID(.14, .08, .02);//(.12,0.08,.01);
 
-        PID thetaPID = new PID(1,0.98,.08);//(2, 0.98, 0.08)
+        PID thetaPID = new PID(1.5,0.98,.09);//(2, 0.98, 0.08)
         thetaPID.errorSumTotal = .1;
-        pid = new PIDController(bot, od);
+        pid = new PIDController(bot, odo);
         
         pid.setPID(xPid, yPid);
         pid.setTurnPID(thetaPID);
-        pid.maxAngSpeed = .9;
-        pid.maxSpeed = 1;
+        pid.maxAngSpeed = .4;
+        pid.maxSpeed = .3;
         
-        mmc = new MecanumMotionController(pid, bot);
+        mmc = new MecanumMotionController(pid, bot, tm);
+        
         
         
         telemetry.addData("Status", "Initialized");
@@ -74,7 +85,8 @@ public class A_Auton extends LinearOpMode {
         
 //init_loop
     //choosing settings with controller
-        /*
+        
+        
         int minSelector = 1;
         int maxSelector = 4;
         int selector = minSelector;
@@ -114,122 +126,150 @@ public class A_Auton extends LinearOpMode {
             telemetry.update();
             
         }
-        */
+        
+        
+        
         waitForStart();
 //start
-    //adding all the movement paths
-    
-    // bot starts in tile F4 with a initial heading of 90 degrees
-    bot.imu.resetYaw();
-    od.setFieldXY(-12, -65);
-    mmc.setLastPos(-12, -65, 0);
-    
-    //mmc.moveTo(30, 45, 90);
-    //mmc.waitForSeconds(3, () -> bot.setArm(1100, 0));
-    //mmc.waitForSeconds(3, () -> bot.setArm(1100, 500));
-    
-    mmc.waitForSeconds(0, () -> bot.setArm(2000, 0));
-    mmc.moveTo(-5, -55.5, -90);
-    //set wrist
-    mmc.moveArmTo(2000, 200);
-    //release claw
-    mmc.moveTo(-5, -59, -90, () -> bot.setArm(1900, 20));
-    //adjust wrist
-    mmc.moveArmTo(0, 100);
-    mmc.moveTo(-31, -59, -90); //going to pick up first sample
-    mmc.waitForSeconds(1);
-    mmc.moveTo(-31, -55, -90); //going forward to grab
-    mmc.waitForSeconds(1);
-    //grab
-    mmc.moveArmTo(2750, 1700); //moving arm up for outtake
-    mmc.moveTo(-31.5, -62, 135); //moving to outtake
-    mmc.waitForSeconds(1);
-    mmc.moveArmTo(3000, 50); //moving arm back to take second specimen
-    mmc.waitForSeconds(0, () -> mmc.moveArmTo(0, 100));
-    mmc.moveTo(-35, -59, -90);
-    
-    
-    
-    
-    
-    // //specimen
-    //     if(specimen){
-    //         //use preload
-    //         if(specimenPreload){
-    //             mmc.moveTo(0, 35, 90);
-    //             mmc.waitForSeconds(2);
-    //             //put on bar
-    //         }else{
-                
-    //         }
-    //         //cycle
-    //         mmc.moveTo(60, 45, 90);
-    //         mmc.waitForSeconds(2);
-    //         mmc.moveTo(60, 55, -45);
-    //         mmc.waitForSeconds(2);
-            
-            
-            
-    // //bucket
-    //     }else{
-    //         //use preload
-            
-    //         //cycle
-            
-            
-    //     }
-    
-    
-    
+        //adding all the movement paths
         
-       
+        // bot starts in tile F4 with a initial heading of 90 degrees
+        tm.armClosed();
+        bot.imu.resetYaw();
+        if(specimen){
+            Pose2D startPos = new Pose2D(DistanceUnit.INCH, -24, 64, AngleUnit.DEGREES, 0);
+            odo.setPosition(startPos);
+            mmc.setLastPos(-24, 64, 0);
+        }else{
+            Pose2D startPos = new Pose2D(DistanceUnit.INCH, 24, 64, AngleUnit.DEGREES, 0);
+            odo.setPosition(startPos);
+            mmc.setLastPos(24, 64, 0);
+        }
         
         
+    
+        mmc.waitForSeconds(delay);
         
+        //dropping preload
+        if(specimenPreload){
+            mmc.waitForSeconds(0, () -> tm.clawIsOpen = false);
+            mmc.waitForSeconds(1, () -> tm.specimen());
+            mmc.moveTo(0, 40, 90);
+            mmc.waitForSeconds(0, () -> tm.specimenUp());
+            mmc.moveTo(0, 45, 90, .5);
+            mmc.waitForSeconds(.5, () -> tm.clawIsOpen = true);
+        }else{
+            mmc.waitForSeconds(0, () -> tm.clawIsOpen = false);
+            mmc.waitForSeconds(1, () -> tm.goingToDrop());
+            mmc.moveTo(55, 52, -45); //going to bucket for preload
+            mmc.waitForSeconds(1);
+            mmc.waitForSeconds(.5, () -> tm.clawIsOpen = true); //dropping preload
+        }
+        
+        
+        if(specimen){
+            mmc.moveTo(0, 54, 90);
+            mmc.waitForSeconds(0, () -> tm.clawIsOpen = true);
+            mmc.waitForSeconds(0, () -> tm.goingToPickup());
+            mmc.moveTo(-32, 60, 180);
+            mmc.waitForSeconds(1, () -> tm.clawIsOpen = false);
+            mmc.waitForSeconds(1, () -> tm.specimen());
+            mmc.moveTo(-5, 48, 90);
+            mmc.moveTo(-5, 40, 90);
+            mmc.waitForSeconds(.5, () -> tm.specimenUp());
+            mmc.moveTo(-5, 45, 90);
+            mmc.waitForSeconds(0, () -> tm.clawIsOpen = true);
+        }else{
+            //first yellow
+            mmc.moveTo(48, 48, -45); //backing up
+            mmc.waitForSeconds(0, () -> tm.goingToPickup());
+            mmc.moveTo(46.7, 48, 90); //lining up to grab sample
+            mmc.waitForSeconds(.6);
+            mmc.moveTo(46.7, 43.5, 90);
+            grabAndDrop();
+            
+            //second yellow
+            mmc.moveTo(48, 48, -45); //backing up
+            mmc.waitForSeconds(0, () -> tm.goingToPickup());
+            mmc.moveTo(56, 48, 90); //lining up to grab sample
+            mmc.waitForSeconds(.6);
+            mmc.moveTo(56, 43.5, 90);
+            grabAndDrop();
+            
+            //third yellow
+            mmc.moveTo(48, 48, -45); //backing up
+            mmc.waitForSeconds(0, () -> tm.goingToPickup());
+            mmc.moveTo(58, 46, 70); //lining up to grab sample
+            mmc.waitForSeconds(.4);
+            mmc.moveTo(60, 42, 72);
+            mmc.waitForSeconds(.4);
+            grabAndDrop();
+            
+            //parking
+            mmc.moveTo(42, 48, 0);
+            mmc.waitForSeconds(0, () -> tm.clawIsOpen = false);
+            mmc.waitForSeconds(0, () -> tm.armClosing());
+            mmc.moveTo(48, 24, 0);
+            mmc.waitForSeconds(0, () -> bot.setFinger(.33));
+            mmc.moveTo(20, 0, 0);
+        }
+        
+        
+        
+        
+        
+            
         
         mmc.start();
         
 //loop
     //repeating while active
         while (opModeIsActive()) {
-            bot.updateEncoders();
-            od.updateTracking();
-            //pid.update();
-            mmc.update();
-            
-            
-            telemetry.addData("Status", "Running");
-            telemetry.addData("position x", od.getX());
-            telemetry.addData("position y", od.getY());
-            telemetry.addData("target x", pid.targetX);
-            telemetry.addData("target y", pid.targetY);
-            telemetry.addData("target angle", pid.getTargetAngle());
-            telemetry.addData("heading", bot.getHeading());
-            telemetry.addData("odo heading", od.getHeading());
-            telemetry.addData("FL", bot.getFLPos());
-            telemetry.addData("FR", bot.getFRPos());
-            telemetry.addData("BL", bot.getBLPos());
-            telemetry.addData("BR", bot.getBRPos());
-            telemetry.update();
             
             try{
                 List<AprilTagDetection> currentDetections = bot.aprilTag.getDetections();
                 for (AprilTagDetection detection : currentDetections) {
-                    //set odomentry
+                    //set odometry
                     double range = detection.ftcPose.range;
                     double bearing = detection.ftcPose.bearing;
                     double yaw = detection.ftcPose.yaw;
                     double tagx = detection.metadata.fieldPosition.get(0);
                     double tagy = detection.metadata.fieldPosition.get(1);
-                    double theta = Math.toRadians(od.getHeading() + bearing);
+                    double theta = Math.toRadians(odo.getHeading() + bearing);
                     double fx = tagx - Math.cos(theta) * range;
+                    fx -= 26;
                     double fy = tagy - Math.sin(theta) * range;
-                    od.setFieldXY(fx, fy);
+                    fy += 4;
+                    //bot.resetEncoders();
+                    //bot.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    //od.setFieldXY(fx, fy);
+                    telemetry.addLine("seeing april tag " + detection.id + " from " + fx + ", " + fy);
                 }
             }
             catch( Exception e){
                 
             }
+            bot.updateEncoders();
+            odo.update();
+            mmc.update();
+            tm.update();
+            
+            Pose2D currentPos = odo.getPosition();
+            
+            telemetry.addData("Status", "Running");
+            telemetry.addData("position x", currentPos.getX(DistanceUnit.INCH));
+            telemetry.addData("position y", currentPos.getY(DistanceUnit.INCH));
+            telemetry.addData("target angle", pid.getTargetAngle());
+            telemetry.addData("heading", bot.getHeading());
+            telemetry.addData("FL", bot.getFLPos());
+            telemetry.addData("FR", bot.getFRPos());
+            telemetry.addData("BL", bot.getBLPos());
+            telemetry.addData("BR", bot.getBRPos());
+            telemetry.addLine();
+            telemetry.addData(" sample x", bot.getSampleX(1));
+            telemetry.update();
+            
+            
             
         }
     }
@@ -262,5 +302,14 @@ public class A_Auton extends LinearOpMode {
         lastY = gamepad1.y;
         lastStart = gamepad1.start;
         lastBack = gamepad1.back;
+    }
+    
+    public void grabAndDrop(){
+        mmc.waitForSeconds(1);
+        mmc.waitForSeconds(.5, () -> tm.clawIsOpen = false);
+        mmc.waitForSeconds(.7, () -> tm.goingToDrop());
+        mmc.moveTo(55.5, 52.5, -45); //going to bucket drop
+        mmc.waitForSeconds(1.6);
+        mmc.waitForSeconds(.5, () -> tm.clawIsOpen = true);
     }
 }

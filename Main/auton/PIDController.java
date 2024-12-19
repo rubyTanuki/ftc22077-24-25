@@ -1,11 +1,15 @@
 package Main.auton;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import com.qualcomm.robotcore.robot.Robot;
 import com.qualcomm.robotcore.util.Range;
 import Main.util.Mathf;
 import Main.*;
 import org.firstinspires.ftc.teamcode.*;
+import org.firstinspires.ftc.teamcode.GoBildaPinpointDriver;
 
 public class PIDController {
     private AutoBot mc = null;
@@ -18,16 +22,16 @@ public class PIDController {
     public double targetY = 0;
     public double targetAngle = 0; //radians
     
-    public double maxAngSpeed = .6;
-    public double maxSpeed = .7;
+    public double maxAngSpeed = .85;
+    public double maxSpeed = .9;
     
-    public BotOdometry odo = null;
+    public GoBildaPinpointDriver odo = null;
     ElapsedTime timer = null;
     
     public boolean nextState = false;
     public double v = 1;
     
-    public PIDController(AutoBot mc, BotOdometry odo){
+    public PIDController(AutoBot mc, GoBildaPinpointDriver odo){
         this.mc = mc;
         this.odo = odo;
     }
@@ -46,9 +50,10 @@ public class PIDController {
     }
     
     public double update(){
-        double curX = odo.getX();
-        double curY = odo.getY();
-        double botHeading = -Math.toRadians(odo.getHeading()); //radian
+        Pose2D curPos = odo.getPosition();
+        double curX = curPos.getX(DistanceUnit.INCH);
+        double curY = curPos.getY(DistanceUnit.INCH);
+        double botHeading = Math.toRadians(curPos.getHeading(AngleUnit.DEGREES)); //radian
         
         double xVal = xPID.update(curX);
         double yVal = yPID.update(curY);
@@ -56,7 +61,7 @@ public class PIDController {
         targetY = yPID.targetVal;
 
         double inputTheta = Math.atan2(yVal, xVal);
-        double inputPower = Range.clip(Math.sqrt(Math.abs(xVal * xVal + yVal * yVal)), -1, 1);
+        double inputPower = Range.clip(Math.sqrt(Math.abs(xVal * xVal + yVal * yVal)), -.9, .9);
         //double inputTurn = Mathf.angleWrap(targetAngle - botHeading);
         double inputTurn = -Mathf.angleWrap(targetAngle - botHeading);
         if(Math.abs(inputTurn) > Math.toRadians(2)){
@@ -72,10 +77,11 @@ public class PIDController {
         
         double maxed = Math.max(Math.abs(cos), Math.abs(sin));
         inputPower *= v;
-        double frontLeft = inputPower * cos/maxed - inputTurn;
-        double frontRight = inputPower * sin/maxed + inputTurn;
-        double backLeft = inputPower * sin/maxed - inputTurn;
-        double backRight = inputPower * cos/maxed + inputTurn;
+        inputPower *= maxSpeed;
+        double frontLeft = inputPower * (cos/maxed * (1/maxSpeed)) - inputTurn;
+        double frontRight = inputPower * (sin/maxed * (1/maxSpeed)) + inputTurn;
+        double backLeft = inputPower * (sin/maxed * (1/maxSpeed)) - inputTurn;
+        double backRight = inputPower * (cos/maxed * (1/maxSpeed)) + inputTurn;
         
         double max1 = Math.max(Math.abs(frontLeft), Math.abs(frontRight));
         double max2 = Math.max(Math.abs(backLeft), Math.abs(backRight));

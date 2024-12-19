@@ -11,13 +11,17 @@ import static Main.BotValues.*;
 public class ArmBot extends Bot{
     private DcMotorEx arm;
     private DcMotorEx slide;
+    public DcMotorEx hang;
 
     private Servo pitch;
     private Servo roll;
     private Servo claw;
+    
+    private Servo finger;
 
     int armPos   = 0;
     int slidePos = 0;
+    int hangPos = 0;
 
     int armPosPrev = 0;
     int slidePosPrev = 0;
@@ -34,6 +38,7 @@ public class ArmBot extends Bot{
     { //initialising motors
         arm = hm.get(DcMotorEx.class, "arm");
         slide = hm.get(DcMotorEx.class, "slide");
+        hang = hm.get(DcMotorEx.class, "hang");
         
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -46,6 +51,8 @@ public class ArmBot extends Bot{
         pitch = hm.get(Servo.class, "pitch");
         roll = hm.get(Servo.class, "roll");
         claw = hm.get(Servo.class, "claw");
+        
+        finger = hm.get(Servo.class, "finger");
     }
     
     public void setArmMode(DcMotor.RunMode mode)
@@ -75,17 +82,20 @@ public class ArmBot extends Bot{
 
         armPos = arm.getCurrentPosition();
         slidePos = slide.getCurrentPosition();
+        hangPos = hang.getCurrentPosition();
     }
     
     //getter methods
     public DcMotorEx getArm()   { return arm;   }
     public DcMotorEx getSlide() { return slide; }
-    public int getArmPos()   { return armPos;   }
-    public int getSlidePos() { return slidePos; }
+    public DcMotorEx getHang()  { return hang;  }
+    public int getArmPos()      { return armPos;   }
+    public int getSlidePos()    { return slidePos; }
+    public int getHangPos()     { return hangPos;  }
 
-    public Servo getPitch() { return pitch; }
-    public Servo getRoll()  { return roll;  }
-    public Servo getClaw()  { return claw;  }
+    public Servo getPitch()     { return pitch; }
+    public Servo getRoll()      { return roll;  }
+    public Servo getClaw()      { return claw;  }
     public double getPitchPos() { return pitch.getPosition(); }
     public double getRollPos()  { return roll.getPosition();  }
     public double getClawPos()  { return claw.getPosition();  }
@@ -100,15 +110,16 @@ public class ArmBot extends Bot{
     { //running arm motor to requested position
         arm.setTargetPosition(armPos);
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        arm.setVelocity(4000);
+        arm.setVelocity(6000);
     }
 
     public void setSlide(int slidePos)
     { //running slide motor to requested position
         slide.setTargetPosition(slidePos);
         slide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        slide.setVelocity(2800);
+        slide.setVelocity(10000);
     }
+    
 
     public void setPitch(double p)
     { //setting position of pitch servo
@@ -130,5 +141,9 @@ public class ArmBot extends Bot{
         setPitch(p);
         setRoll(r);
         setClaw(c);
+    }
+    
+    public void setFinger(double f){
+        finger.setPosition(f);
     }
 }

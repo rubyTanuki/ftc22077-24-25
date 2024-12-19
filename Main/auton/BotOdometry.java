@@ -46,14 +46,14 @@ public class BotOdometry implements Odometry{
         double cos = Math.cos(angle);
         double sin = Math.sin(angle);
 
-        int deltaFL = bot.getFLPos() - bot.getFLPosPrev();
-        int deltaFR = bot.getFRPos() - bot.getFRPosPrev();
-        int deltaBL = bot.getBLPos() - bot.getBLPosPrev();
-        int deltaBR = bot.getBRPos() - bot.getBRPosPrev();
+        double deltaFL = (bot.getFLPos() - bot.getFLPosPrev()) / TICKS_PER_REVOLUTION;
+        double deltaFR = (bot.getFRPos() - bot.getFRPosPrev()) / TICKS_PER_REVOLUTION;
+        double deltaBL = (bot.getBLPos() - bot.getBLPosPrev()) / TICKS_PER_REVOLUTION;
+        double deltaBR = (bot.getBRPos() - bot.getBRPosPrev()) / TICKS_PER_REVOLUTION;
         
         double TO_INCHES = (WHEEL_DIAMETER * Math.PI) / (4 * TICKS_PER_REVOLUTION);
-        double deltaX = (deltaFL + deltaFR + deltaBL + deltaBR) * TO_INCHES;
-        double deltaY = (-deltaFL + deltaFR + deltaBL - deltaBR) * TO_INCHES;
+        double deltaX = (deltaFL + deltaFR + deltaBL + deltaBR) * DISTANCE_PER_REVOLUTION / 4.0 * 1;
+        double deltaY = (-deltaFL + deltaFR + deltaBL - deltaBR) * DISTANCE_PER_REVOLUTION / 4.0 * .9;
 
         double rotatedX = (deltaX * cos) - (deltaY * sin);
         double rotatedY = (deltaX * sin) + (deltaY * cos);

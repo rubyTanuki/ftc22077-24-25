@@ -1,6 +1,8 @@
 package Main;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.hardware.dfrobot.HuskyLens;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -17,11 +19,15 @@ public class AutoBot extends ArmBot{
 
     public AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
-
+    private HuskyLens huskyLens;
+    
+    
     public AutoBot(HardwareMap hm)
     { //contructor method
         super(hm);
         initAprilTag(hm);
+        huskyLens = hm.get(HuskyLens.class, "huskylens");
+        
     }
 
     public void initAprilTag(HardwareMap hardwareMap)
@@ -59,4 +65,27 @@ public class AutoBot extends ArmBot{
         }
         return (false);
     }
+    
+    public int getSampleX(int id){
+        HuskyLens.Block sample = null;
+        for(HuskyLens.Block block : huskyLens.blocks()){
+            if(block.id == id && block.y > 120){
+                if(sample == null) sample = block;
+                if(Math.abs(block.x-260) < Math.abs(sample.x-180)){
+                    sample = block;
+                    break;
+                }
+            }
+        }
+        //process block
+        try{
+            return sample.x;
+        }
+        catch( Exception e){
+            return 160;
+        }
+        
+    }
+    
+    
 }

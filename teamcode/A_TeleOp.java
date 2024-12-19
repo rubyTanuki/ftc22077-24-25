@@ -27,6 +27,10 @@ public class A_TeleOp extends LinearOpMode {
     public boolean lastY2;
     public boolean lastA2;
     public boolean lastB2;
+    public boolean lastLT2;
+    public boolean lastStart;
+    
+    public boolean specimen;
 
 
     @Override
@@ -43,6 +47,8 @@ public class A_TeleOp extends LinearOpMode {
         
         waitForStart();
         runtime.reset();
+        
+        tm.armClosed();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -50,6 +56,8 @@ public class A_TeleOp extends LinearOpMode {
             boolean y2 = gamepad2.y;
             boolean a2 = gamepad2.a;
             boolean b2 = gamepad2.b;
+            boolean lt2 = gamepad2.left_trigger > 0;
+            boolean start2 = gamepad2.start;
             
             double multi = gamepad1.left_trigger;
             double jx = -gamepad1.left_stick_y;
@@ -61,13 +69,28 @@ public class A_TeleOp extends LinearOpMode {
             }
             
             if(gamepad1.dpad_up){ bot.imu.resetYaw(); }
+            
+            if(start2 && !lastStart){
+                specimen = !specimen;
+            }
 
             driveFieldXYW(jx*Math.max(.25, (1-multi)), jy*Math.max(.25, (1-multi)), jw*Math.max(.25, (1-multi)));
             
             if(x2 && !lastX2){ tm.armClosing();     tm.start();}
             if(y2 && !lastY2){ tm.goingToPickup();  tm.start();}
             if(b2 && !lastB2){ tm.goingToDrop();    tm.start();}
-            if(a2 && !lastA2){ tm.specimen();       tm.start();}
+            
+            if(a2 && !lastA2){
+                if(specimen){ tm.specimen(); tm.start();}
+                else{         tm.pullBack(); tm.start();}
+            }
+            
+            if(lt2 && !lastLT2 && tm.toString().equals("Specimen")){
+                tm.specimenUp();
+                tm.start();
+            }
+            
+            
             
             bot.updateEncoders();
             tm.update();
@@ -84,6 +107,9 @@ public class A_TeleOp extends LinearOpMode {
             lastY2 = y2;
             lastA2 = a2;
             lastB2 = b2;
+            
+            lastLT2 = lt2;
+            lastStart = start2;
         }
     }
     

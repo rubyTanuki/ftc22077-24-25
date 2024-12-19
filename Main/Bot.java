@@ -4,6 +4,7 @@
 package Main;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -31,6 +32,8 @@ public class Bot{
     public IMU imu;
     double heading;
 
+    private VoltageSensor voltageSensor;
+    
     //current motor positions
     int frontLeftPos  = 0;
     int frontRightPos = 0;
@@ -50,6 +53,7 @@ public class Bot{
         initMotors(hm);
         initIMU(hm);
         setDirections();
+        voltageSensor = hm.voltageSensor.iterator().next();
         //resetEncoders();
     }
 
@@ -68,6 +72,10 @@ public class Bot{
         IMU.Parameters params = new IMU.Parameters(
             new RevHubOrientationOnRobot(LOGO_DIR, USB_DIR));
         imu.initialize(params);
+    }
+    
+    public double getVoltage(){
+        return voltageSensor.getVoltage();
     }
 
     
@@ -88,6 +96,13 @@ public class Bot{
 
     public double getHeading(){ return -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);}
     public void resetHeading(){ imu.resetYaw(); }
+    
+    public void resetPrevEncoders(){
+        frontLeftPosPrev = 0;
+        frontRightPosPrev = 0;
+        backLeftPosPrev = 0;
+        backRightPosPrev = 0;
+    }
 
     public void setDirections()
     { //setting the directions of left motors to reverse
@@ -107,6 +122,7 @@ public class Bot{
 
     public void resetEncoders()
     { //Resetting encoders to 0, keeping current mode
+        resetPrevEncoders();
         DcMotor.RunMode mode = frontLeft.getMode();
 
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -144,10 +160,11 @@ public class Bot{
     public void driveXYW(double rx, double ry, double rw)
     { //set proportional power to drive motors
         double denom = Math.max(Math.abs(rx)+Math.abs(ry)+Math.abs(rw),1);
-        double lfPower = (rx - ry - rw) / denom;
-        double rfPower = (rx + ry + rw) / denom;
-        double lbPower = (rx + ry - rw) / denom;
-        double rbPower = (rx - ry + rw) / denom;
+        double voltageMulti = getVoltage() / 12;
+        double lfPower = ((rx - ry - rw) / denom) / voltageMulti;
+        double rfPower = ((rx + ry + rw) / denom) / voltageMulti;
+        double lbPower = ((rx + ry - rw) / denom) / voltageMulti;
+        double rbPower = ((rx - ry + rw) / denom) / voltageMulti;
         
         frontLeft.setPower(lfPower);
         frontRight.setPower(rfPower);
