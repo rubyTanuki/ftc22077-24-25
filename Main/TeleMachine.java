@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.robotcore.external.State;
 import Main.util.*;
-import Main.statemachine.*;
 import org.firstinspires.ftc.teamcode.*;
 import java.util.ArrayList;
 
@@ -27,6 +26,7 @@ public class TeleMachine {
     private final double ROLL_GAIN = 0.01; //0.01
     private final double CLAW_GAIN = 0.01; //0.01
     
+    private double ROLL_FLAT = 1;
     private final double CLAW_CLOSED = .65;
     private final double CLAW_OPEN = 1;
     public boolean clawIsOpen = false;
@@ -83,7 +83,7 @@ public class TeleMachine {
                 @Override
                 void end(){
                     bot.setArm(300);
-                    bot.setWrist(0, 0.85, clawTarget);
+                    bot.setWrist(0, ROLL_FLAT, clawTarget);
                 }
             };
             currentState.start();
@@ -110,7 +110,7 @@ public class TeleMachine {
                 void update(){
                     if(bot.getSlidePos()>50) bot.setArm(bot.getArmPos(), 0);
                     else bot.setArm(2000, 0);
-                    if(bot.getArmPos()>500)bot.setWrist(0, 0.85, clawTarget);
+                    if(bot.getArmPos()>500)bot.setWrist(0, ROLL_FLAT, clawTarget);
 
                     if((Math.abs(bot.getArmPos()-1000) <10 && bot.getSlidePos()<50) || bot.getArmPos()>1100);
                     {
@@ -154,7 +154,7 @@ public class TeleMachine {
                         else clawTarget = CLAW_CLOSED;
                     }
                     bot.setArm(armTarget, slideTarget);
-                    bot.setWrist(pitchTarget, .85, clawTarget);
+                    bot.setWrist(pitchTarget, ROLL_FLAT, clawTarget);
 
                 }
             };
@@ -176,8 +176,8 @@ public class TeleMachine {
                 void update(){
                     if(bot.getSlidePos()>50) bot.setArm(bot.getArmPos(), 10);
                     else bot.setArm(2000, 10);
-                    if(bot.getArmPos()>1500) bot.setWrist(.8, 0.85, .7);
-                    else bot.setWrist(0, 0.85, 0.4);
+                    if(bot.getArmPos()>1500) bot.setWrist(.8, ROLL_FLAT, .7);
+                    else bot.setWrist(0, ROLL_FLAT, 0.4);
                     
 
                     if((Math.abs(bot.getArmPos()-1000) <10 && bot.getSlidePos()<50) || bot.getArmPos()>1100);
@@ -209,7 +209,7 @@ public class TeleMachine {
                     if(clawIsOpen)clawTarget = CLAW_OPEN;
                     else clawTarget = CLAW_CLOSED;
                     bot.setArm(600, 10);
-                    bot.setWrist(.7, .85, clawTarget);
+                    bot.setWrist(.7, ROLL_FLAT, clawTarget);
                 }
             };
             currentState.start();
@@ -225,8 +225,8 @@ public class TeleMachine {
                 ElapsedTime timer;
                 private int armTarget = 1350;
                 private int slideTarget = 300;
-                double[] rollTargets = {0.15, 0.85};
-                int index = 1;
+                double[] rollTargets = {0.3, 0.6, ROLL_FLAT};
+                int index = 2;
                 
                 @Override
                 void start(){
@@ -252,8 +252,8 @@ public class TeleMachine {
                         if(pitchTarget <0) pitchTarget = 1;
                         
                         
-                        if(gamepad2.dpad_left && !lastLeft) index = 0;
-                        if(gamepad2.dpad_right && !lastRight) index = 1;
+                        if(gamepad2.dpad_left && !lastLeft && index-1>=0) index--;
+                        if(gamepad2.dpad_right && !lastRight && index+1<rollTargets.length) index++;
                     }
                     
                     // if(index>rollTargets.length-1) index = 0;
@@ -263,7 +263,7 @@ public class TeleMachine {
                     bot.setArm(armTarget, bot.getArmPos()>1000?slideTarget:bot.getSlidePos());
                     if(bot.getArmPos()>1000){
                         if(timer.seconds()>2)bot.setWrist(.7, rollTargets[index], clawTarget);
-                        else bot.setWrist(.7, 0.85, clawTarget);
+                        else bot.setWrist(.7, ROLL_FLAT, clawTarget);
                     }
                 }
             };
@@ -278,7 +278,6 @@ public class TeleMachine {
                 public String getName(){ return "SpecimenUp";}
                 private int armTarget = 1550;
                 private int slideTarget = 300;
-                private double rollTarget = .85;
                 
                 @Override
                 void start(){
@@ -288,7 +287,7 @@ public class TeleMachine {
                 @Override
                 void update(){
                     bot.setArm(armTarget, bot.getArmPos()>1000?slideTarget:bot.getSlidePos());
-                    bot.setWrist(.7, rollTarget, clawTarget);
+                    bot.setWrist(.7, ROLL_FLAT, clawTarget);
                 }
             };
             currentState.start();
@@ -318,7 +317,7 @@ public class TeleMachine {
                         else clawTarget = CLAW_CLOSED;
                     }
                     bot.setArm(2800, Math.max(0, bot.getSlidePos()));
-                    bot.setWrist(0, 0.85, clawTarget);
+                    bot.setWrist(0, ROLL_FLAT, clawTarget);
                     
                     if(Math.abs(bot.getArmPos()-2800) <10 && timer.seconds()>.5);
                     {
@@ -357,7 +356,7 @@ public class TeleMachine {
                         else clawTarget = CLAW_CLOSED;
                     }
                     bot.setArm(armTarget, slideTarget);
-                    bot.setWrist(.4, 0.85, clawTarget);
+                    bot.setWrist(.4, ROLL_FLAT, clawTarget);
                 }
             };
         }

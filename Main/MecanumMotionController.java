@@ -6,13 +6,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.State;
 import Main.util.Mathf;
-import Main.statemachine.*;
 import Main.*;
 import Main.auton.*;
 import org.firstinspires.ftc.teamcode.*;
 
 import java.util.ArrayList;
-
+    
 public class MecanumMotionController {
 
     
@@ -20,7 +19,6 @@ public class MecanumMotionController {
     AutoBot bot = null;
     TeleMachine tm = null;
     ArrayList<MecanumAction> actions = new ArrayList<MecanumAction>();
-    public SimpleState parallel;
     int current = 0;
     
     public MecanumMotionController(PIDController pid, AutoBot bot, TeleMachine tm){
@@ -38,7 +36,6 @@ public class MecanumMotionController {
         if(true){//ended == false){
             actions.get(current).update();
         }
-        if(parallel != null) parallel.update();
     }
     
     public void end(){
@@ -51,7 +48,6 @@ public class MecanumMotionController {
     public void setLastPos(double x, double y, double theta){
         lastX = x; lastY = y; lastAngle = theta;
     }
-    
     
     
     public void alignToSample(int id, double timeout){
