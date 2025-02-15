@@ -30,6 +30,10 @@ public class BotState{
         name = n;
         if(bool) states.put(name, this);
     }
+    
+    public String toString(){
+        return name;
+    }
 
     void start(){};
     void update(){};
